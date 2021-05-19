@@ -3,21 +3,32 @@ import bodyParse from "body-parser";
 import mongoose from "mongoose";
 import logger from "morgan";
 import dotenv from "dotenv"
-import mainRoutes from "./server/routes/main.js";
+import courseRoutes from "./routes/course.js";
+import userRoutes from "./routes/user.js";
 import jwt from "jsonwebtoken";
+import {createServer} from "http";
+import {Server} from "socket.io";
 
-const app = express();
 dotenv.config();
+
 const port = process.env.PORT || 3000;
 const url = process.env.DB_URL;
 const secret = process.env.SECRET;
 
+const app = express();
 app.set("view engine", "ejs");
-app.set("views","./views");
-
+app.set("views","./server/views");
+app.use(express.static("public"));
 app.use(bodyParse.json());
 app.use(bodyParse.urlencoded({extended: false}));
-app.use(logger("dev"));
+
+const server = createServer(app);
+const io = new Server(server); 
+
+app.io = io;
+
+//app.listen được thay bằng server.listen(3000)
+server.listen(3000);
 
 mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true })
     .then(() => {
@@ -27,13 +38,7 @@ mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true, useCrea
         console.log("Error connecting to database: " + error.message);
     });
 
-const server = app.listen(port, function(){
-    console.log("Server running with port:%s", port);
-});
-app.get("/", (req, res) => {
-    res.send("Abc");
-});
-app.use("/api/", mainRoutes);
+app.use("/api/", [courseRoutes, userRoutes]);
 
 app.post("/login", function(req, res){
     if (req.body.Username=="admin"&&req.body.Password=="123456"){
@@ -87,5 +92,12 @@ app.post("/verifyToken", function(req, res){
                 data: decoded
             });
         }
+    });
+});
+
+io.on("connection", function(socket){
+    console.log("New Id" + socket.id);
+    socket.on("disconnect", function(){
+        console.log("User disconnected");
     });
 });
