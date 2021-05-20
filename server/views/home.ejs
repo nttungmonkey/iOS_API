@@ -10,8 +10,12 @@
     <script src="./js/jquery.min.js"></script>
     <script>
         const socket = io("http://localhost:3000");
+        socket.on("S_Sendto_C", function(data){
+            console.log(data);
+        });
+        
         $(document).ready(function() {
-            
+            socket.emit("C_Sendto_S", "xxx");
         })
     </script>
 </head>
