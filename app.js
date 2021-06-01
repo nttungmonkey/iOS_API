@@ -9,6 +9,9 @@ import jwt from "jsonwebtoken";
 import {createServer} from "http";
 import {Server} from "socket.io";
 import multer from "multer";
+import ytdl from "ytdl-core";
+import { resolve } from "path";
+import { rejects } from "assert";
 
 dotenv.config();
 
@@ -38,6 +41,13 @@ mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true, useCrea
     .catch((error) => {
         console.log("Error connecting to database: " + error.message);
     });
+
+let getYoutubeInfo = (id) => {
+    return new Promise((resolve, reject) => {
+        let info = ytdl.getInfo("xRyDrgyNiGI");
+        resolve(info);
+    });
+}
 
 //Setup Multer for upload file
 const storage = multer.diskStorage({
@@ -143,7 +153,20 @@ app.post("/uploadFile",  function(req, res){
     });
 });
 
-
+app.get("/youtube/:id", function(req, res){
+    getYoutubeInfo(req.params.id).then((data)=>{
+        var url = "";
+        data.formats.forEach(function(item){
+            if (item.hasVideo == true && item.hasAudio==true){
+                url = item.url;
+                res.json({"result":true, "url": url});
+                return;
+            }   
+        });
+    }).catch((err)=>{
+        res.json({"resule":false, "errMsg": err})
+    });
+});
 
 io.on("connection", function(socket){
     console.log("New Id" + socket.id);
