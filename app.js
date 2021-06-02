@@ -42,11 +42,16 @@ mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true, useCrea
         console.log("Error connecting to database: " + error.message);
     });
 
-let getYoutubeInfo = (id) => {
-    return new Promise((resolve, reject) => {
-        let info = ytdl.getInfo("xRyDrgyNiGI");
-        resolve(info);
-    });
+const getYoutubeInfo = async(id)=>{
+        let data = await ytdl.getInfo(id);
+        var url = "";
+        data.formats.forEach(function(item){
+            if (item.hasVideo == true && item.hasAudio==true){
+                url = item.url;
+                console.log(url);         
+            }   
+        }); 
+        return url;     
 }
 
 //Setup Multer for upload file
@@ -155,17 +160,13 @@ app.post("/uploadFile",  function(req, res){
 
 app.get("/youtube/:id", function(req, res){
     getYoutubeInfo(req.params.id).then((data)=>{
-        var url = "";
-        data.formats.forEach(function(item){
-            if (item.hasVideo == true && item.hasAudio==true){
-                url = item.url;
-                res.json({"result":true, "url": url});
-                return;
-            }   
-        });
-    }).catch((err)=>{
-        res.json({"resule":false, "errMsg": err})
+        console.log(data);
+        res.json({"result": 1, "data": data});
+    }).catch((err) => {
+        res.json({"result": 1, "data": err});
     });
+    
+    
 });
 
 io.on("connection", function(socket){
